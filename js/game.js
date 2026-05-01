@@ -166,12 +166,16 @@
         $('puzzleNumber').textContent = 'Puzzle #' + state.puzzleNumber;
     }
 
-    /* renderBoard rebuilds the full grid each call, but only the row index
-       passed as `flipRowIdx` gets the `.revealed` class — without it, the
-       `tile-flip` keyframe never runs, so re-rendering during typing keeps
-       previously-submitted rows visually static. */
-    function renderBoard(flipRowIdx) {
-        if (typeof flipRowIdx !== 'number') flipRowIdx = -1;
+    /* renderBoard does INCREMENTAL updates after the first call:
+       - It builds the 6×5 skeleton once.
+       - Submitted rows are painted exactly once (with `.revealed` flip
+         applied if `flipRowIdx === r`), then marked `data-locked="1"` and
+         never touched again. This is the cure for both bugs:
+         the pop-pulse on already-submitted rows and the flip re-trigger.
+       - Only the active typing row re-renders per keystroke, and only the
+         tile whose letter actually changed gets the `.pop` animation. */
+    let boardBuilt = false;
+    function buildSkeleton() {
         board.innerHTML = '';
         for (let r = 0; r < MAX_GUESSES; r++) {
             const row = document.createElement('div');
@@ -180,25 +184,68 @@
             for (let c = 0; c < WORD_LEN; c++) {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
-                let letter = '';
-                if (r < state.guesses.length) {
-                    const g = state.guesses[r];
-                    letter = g.word[c].toUpperCase();
-                    tile.classList.add('filled', 'state-' + g.lied[c]);
-                    if (r === flipRowIdx) {
-                        tile.classList.add('revealed');
-                        tile.style.animationDelay = (c * 0.18) + 's';
-                    }
-                } else if (r === state.guesses.length) {
-                    if (c < state.current.length) {
-                        letter = state.current[c].toUpperCase();
-                        tile.classList.add('filled');
-                    }
-                }
-                tile.textContent = letter;
                 row.appendChild(tile);
             }
             board.appendChild(row);
+        }
+        boardBuilt = true;
+    }
+
+    function renderBoard(flipRowIdx) {
+        if (typeof flipRowIdx !== 'number') flipRowIdx = -1;
+        if (!boardBuilt) buildSkeleton();
+        const rows = board.children;
+        for (let r = 0; r < MAX_GUESSES; r++) {
+            const row = rows[r];
+            const tiles = row.children;
+            const locked = row.dataset.locked === '1';
+
+            if (r < state.guesses.length) {
+                // Submitted row. Paint once, then lock.
+                if (locked) continue;
+                const g = state.guesses[r];
+                for (let c = 0; c < WORD_LEN; c++) {
+                    const tile = tiles[c];
+                    tile.textContent = g.word[c].toUpperCase();
+                    tile.className = 'tile filled state-' + g.lied[c];
+                    if (r === flipRowIdx) {
+                        tile.classList.add('revealed');
+                        tile.style.animationDelay = (c * 0.18) + 's';
+                    } else {
+                        tile.style.animationDelay = '';
+                    }
+                }
+                row.dataset.locked = '1';
+            } else if (r === state.guesses.length) {
+                // Active typing row. Update only the tiles that differ.
+                row.dataset.locked = '';
+                for (let c = 0; c < WORD_LEN; c++) {
+                    const tile = tiles[c];
+                    const desired = c < state.current.length ? state.current[c].toUpperCase() : '';
+                    if (tile.textContent === desired) continue;
+                    tile.textContent = desired;
+                    if (desired) {
+                        tile.className = 'tile filled pop';
+                        // Restart animation if we're overwriting a previous letter.
+                        tile.style.animation = 'none';
+                        // eslint-disable-next-line no-unused-expressions
+                        void tile.offsetWidth;
+                        tile.style.animation = '';
+                    } else {
+                        tile.className = 'tile';
+                    }
+                }
+            } else {
+                // Future empty row. Leave alone unless coming back from an
+                // unwanted state (e.g. after a reset).
+                if (row.dataset.locked === '1') {
+                    row.dataset.locked = '';
+                    for (let c = 0; c < WORD_LEN; c++) {
+                        tiles[c].textContent = '';
+                        tiles[c].className = 'tile';
+                    }
+                }
+            }
         }
     }
 
