@@ -1,0 +1,6 @@
+.playwright-mcp
+*.png
+node_modules
+CLAUDE.md
+.cfignore
+wrangler.jsonc

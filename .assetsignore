@@ -1,0 +1,7 @@
+CLAUDE.md
+.playwright-mcp/
+.assetsignore
+.cfignore
+wrangler.jsonc
+bluff-*.png
+*.log
