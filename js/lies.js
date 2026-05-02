@@ -91,7 +91,7 @@
             id: 'greengrocer',
             name: 'Greengrocer',
             short: 'greengrocer',
-            description: 'Every correct (right letter, right place) was reported as merely present (right letter, wrong place). Every yellow could have been a green in disguise.',
+            description: 'Every correct (right letter, right place) was reported as merely present (right letter, wrong place). Every yellow tile could really have been an orange in disguise.',
             buildParams: function () { return {}; },
             apply: applyGreengrocer
         },
@@ -99,7 +99,7 @@
             id: 'mirror',
             name: 'Mirror',
             short: 'mirror',
-            description: 'Every reported colour was wrong. Greens were really not in the word. Yellows were really right where they sat. Grays were really yellow.',
+            description: 'Every reported colour was wrong. Oranges were really not in the word. Yellows were really right where they sat. Grays were really yellow.',
             buildParams: function () { return {}; },
             apply: applyMirror
         }

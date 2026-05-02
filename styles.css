@@ -234,20 +234,20 @@ nav {
     justify-content: center;
 }
 
-/* Board width is the smaller of:
+/* Board has 8 rows now. Width is the smaller of:
    - a hard cap (large monitors don't need an absurd board),
    - 88% of the wrap width,
-   - what's left of the viewport height after nav + hero + keyboard +
-     footer claim their share (~460px), converted to width via the
-     5/6 aspect ratio.
-   This guarantees the keyboard's bottom row stays above the fold. */
+   - what's left of the viewport height after nav + hero + hints +
+     keyboard + footer claim their share, converted to width via the
+     5/8 aspect ratio. The 5/8 expression encodes the 5-col / 8-row
+     ratio. This keeps the keyboard's bottom row above the fold. */
 .board {
     display: grid;
-    grid-template-rows: repeat(6, 1fr);
-    gap: 8px;
-    padding: 6px;
-    width: min(520px, 88%, calc((100vh - 440px) * 5 / 6));
-    aspect-ratio: 5 / 6;
+    grid-template-rows: repeat(8, 1fr);
+    gap: 6px;
+    padding: 5px;
+    width: min(360px, 88%, calc((100vh - 440px) * 5 / 8));
+    aspect-ratio: 5 / 8;
     flex: 0 0 auto;
 }
 
@@ -353,6 +353,40 @@ nav {
     font-style: italic;
     font-family: var(--font-display);
     font-size: 1rem;
+}
+
+/* ---------- Hints (unlock after rows 3 and 5) ---------- */
+
+.hints {
+    width: 100%;
+    max-width: 460px;
+    text-align: center;
+    color: var(--ink-light);
+    font-size: .88rem;
+    line-height: 1.45;
+    padding: 0 1rem;
+    margin-bottom: .15rem;
+}
+.hints:empty { display: none; }
+.hint-line {
+    display: block;
+    margin-top: .15rem;
+    opacity: 0;
+    animation: hint-fade .55s ease forwards;
+    font-style: italic;
+}
+.hint-eyebrow {
+    color: var(--orange);
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    font-size: .62rem;
+    text-transform: uppercase;
+    font-style: normal;
+    margin-right: .25rem;
+}
+@keyframes hint-fade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ---------- Keyboard ---------- */

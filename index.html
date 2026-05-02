@@ -33,7 +33,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
 
@@ -73,13 +73,15 @@
         </div>
         <h1>Wordle, but it <em>lies to you.</em></h1>
         <p class="hero-sub">
-            Six guesses to find the five-letter word. The colour feedback follows
+            Eight guesses to find the five-letter word. The colour feedback follows
             a hidden, deterministic schedule of lies. Solve the word <em>and</em>
             figure out the bluff.
         </p>
     </section>
 
     <section class="board-wrap">
+        <div class="hints" id="hints" aria-live="polite"></div>
+
         <div class="board" id="board" aria-label="Guess board"></div>
 
         <div class="status-line" id="statusLine" role="status" aria-live="polite"></div>
@@ -94,7 +96,7 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="howToTitle">
         <button class="modal-close" data-close="1" aria-label="Close">&times;</button>
         <h2 id="howToTitle">How to play <em>Bluff</em></h2>
-        <p>Guess the five-letter word in six tries. After each guess the tiles
+        <p>Guess the five-letter word in eight tries. After each guess the tiles
             recolour:</p>
         <div class="how-tiles">
             <span class="tile mini state-correct">A</span>
@@ -113,7 +115,8 @@
             on purpose, in a deterministic pattern. Same lie all day, same
             puzzle for everyone. You have to solve the word <em>and</em> reverse-
             engineer the lie at the same time.</p>
-        <p class="how-foot">A daily puzzle. New word every day at midnight local.</p>
+        <p class="how-foot">An indirect hint surfaces after your 3rd and 5th guesses.
+            A new puzzle drops every day at midnight local.</p>
     </div>
 </div>
 
@@ -153,11 +156,12 @@
     </div>
 </footer>
 
-<script src="js/words.js"></script>
-<script src="js/seed.js"></script>
-<script src="js/lies.js"></script>
-<script src="js/share.js"></script>
-<script src="js/game.js"></script>
+<script src="js/valid-words.js?v=2"></script>
+<script src="js/words.js?v=2"></script>
+<script src="js/seed.js?v=2"></script>
+<script src="js/lies.js?v=2"></script>
+<script src="js/share.js?v=2"></script>
+<script src="js/game.js?v=2"></script>
 
 </body>
 </html>

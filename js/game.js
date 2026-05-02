@@ -8,9 +8,15 @@
 (function () {
     'use strict';
 
-    const MAX_GUESSES = 6;
+    const MAX_GUESSES = 8;
     const WORD_LEN = 5;
-    const STORE_PREFIX = 'bluff:v1:';
+    /* Bumping MAX_GUESSES is a save-breaking change for the puzzle (the lie
+       parameter pool depends on the guess count). The store prefix gets a
+       new version so old v1 saves are ignored without polluting the new
+       game with an "X/6" lockout. */
+    const STORE_PREFIX = 'bluff:v2:';
+    /* When to surface the indirect hints (1-indexed row counts). */
+    const HINT_AFTER_ROWS = [3, 5];
 
     /* Pull module APIs into the IIFE closure so we can scrub the window
        globals after init without breaking gameplay. Everything below this
@@ -134,6 +140,7 @@
             answer: answer,
             scheduleId: schedule.id,
             lieParams: lieParams,
+            hints: computeHints(answer),
             // gameplay state
             guesses: [],   // [{word, true: [...], lied: [...]}]
             current: '',
@@ -141,6 +148,44 @@
             lost: false,
             maxGuesses: MAX_GUESSES
         };
+    }
+
+    /* Indirect hints surfaced after rows 3 and 5. The point is to give a
+       structural nudge — vowel count, doubled-letter, alphabet half — that
+       narrows the search space without naming the answer. Both hints are
+       deterministic from the answer alone, so every player today sees the
+       same nudges in the same order. */
+    function computeHints(answer) {
+        const VOWELS = 'aeiou';
+        const isVowel = ch => VOWELS.indexOf(ch) >= 0;
+        const vc = answer.split('').filter(isVowel).length;
+        const distinct = new Set(answer).size;
+        const hasDouble = distinct < answer.length;
+        const startsVowel = isVowel(answer[0]);
+        const endsVowel = isVowel(answer[answer.length - 1]);
+
+        const hint1 = vc === 1
+            ? 'A single vowel hides in this word.'
+            : 'This word carries ' + numberWord(vc) + ' vowels.';
+
+        let hint2;
+        if (hasDouble) {
+            hint2 = 'One of its letters appears twice.';
+        } else if (startsVowel && endsVowel) {
+            hint2 = 'It opens and closes on a vowel.';
+        } else if (startsVowel) {
+            hint2 = 'It begins with a vowel.';
+        } else if (endsVowel) {
+            hint2 = 'It ends on a vowel.';
+        } else if (answer[0] <= 'm') {
+            hint2 = 'Its first letter sits in the first half of the alphabet.';
+        } else {
+            hint2 = 'Its first letter sits in the second half of the alphabet.';
+        }
+        return { hint1: hint1, hint2: hint2 };
+    }
+    function numberWord(n) {
+        return ['zero','one','two','three','four','five'][n] || String(n);
     }
 
     function getSchedule(id) {
@@ -153,6 +198,7 @@
     const board   = $('board');
     const kb      = $('keyboard');
     const status  = $('statusLine');
+    const hintsEl = $('hints');
     const toast   = $('toast');
     const endModal= $('endModal');
     const howModal= $('howToModal');
@@ -163,7 +209,32 @@
         renderBoard(typeof flipRowIdx === 'number' ? flipRowIdx : -1);
         renderKeyboard();
         renderStatus();
+        renderHints();
         $('puzzleNumber').textContent = 'Puzzle #' + state.puzzleNumber;
+    }
+
+    /* Hints unlock after rows 3 and 5. They appear above the board, fade in
+       gently, and persist across reloads (state.hints is built at puzzle
+       create time, the count of guesses determines visibility). */
+    function renderHints() {
+        if (!hintsEl) return;
+        const hints = state.hints || {};
+        const targets = [
+            { row: HINT_AFTER_ROWS[0], text: hints.hint1 },
+            { row: HINT_AFTER_ROWS[1], text: hints.hint2 }
+        ];
+        const visible = targets.filter(t => state.guesses.length >= t.row && t.text);
+        // Avoid wiping + re-fading already-shown hints on every keystroke.
+        const existing = hintsEl.querySelectorAll('.hint-line').length;
+        if (existing === visible.length) return;
+        hintsEl.innerHTML = '';
+        visible.forEach(function (t, idx) {
+            const line = document.createElement('div');
+            line.className = 'hint-line';
+            line.style.animationDelay = (idx === existing ? '0s' : '0s');
+            line.innerHTML = '<span class="hint-eyebrow">Hint</span> &middot; ' + t.text;
+            hintsEl.appendChild(line);
+        });
     }
 
     /* renderBoard does INCREMENTAL updates after the first call:
